@@ -7,6 +7,14 @@ let currentSessionId = null;
 // DOM elements
 let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
 
+// Apply saved theme before first render to avoid flash
+(function () {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+})();
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Get DOM elements after page loads
@@ -15,11 +23,36 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
-    
+
+    setupThemeToggle();
     setupEventListeners();
     createNewSession();
     loadCourseStats();
 });
+
+// Theme Toggle
+function setupThemeToggle() {
+    const toggle = document.getElementById('themeToggle');
+
+    toggle.addEventListener('click', () => {
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        const next = isLight ? 'dark' : 'light';
+
+        document.documentElement.classList.add('theme-switching');
+
+        if (next === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+
+        localStorage.setItem('theme', next);
+
+        setTimeout(() => {
+            document.documentElement.classList.remove('theme-switching');
+        }, 250);
+    });
+}
 
 // Event Listeners
 function setupEventListeners() {
