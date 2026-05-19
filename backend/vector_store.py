@@ -90,11 +90,10 @@ class VectorStore:
         search_limit = limit if limit is not None else self.max_results
         
         try:
-            results = self.course_content.query(
-                query_texts=[query],
-                n_results=search_limit,
-                where=filter_dict
-            )
+            kwargs = {"query_texts": [query], "n_results": search_limit}
+            if filter_dict is not None:
+                kwargs["where"] = filter_dict
+            results = self.course_content.query(**kwargs)
             return SearchResults.from_chroma(results)
         except Exception as e:
             return SearchResults.empty(f"Search error: {str(e)}")
@@ -246,6 +245,26 @@ class VectorStore:
             print(f"Error getting course link: {e}")
             return None
     
+    def get_course_outline(self, course_title: str) -> Optional[Dict]:
+        """Get full course outline with fuzzy title matching."""
+        import json
+        resolved_title = self._resolve_course_name(course_title)
+        if not resolved_title:
+            return None
+        try:
+            results = self.course_catalog.get(ids=[resolved_title])
+            if results and results['metadatas']:
+                meta = results['metadatas'][0]
+                return {
+                    'title': meta.get('title', resolved_title),
+                    'course_link': meta.get('course_link'),
+                    'lessons': json.loads(meta.get('lessons_json', '[]'))
+                }
+            return None
+        except Exception as e:
+            print(f"Error getting course outline: {e}")
+            return None
+
     def get_lesson_link(self, course_title: str, lesson_number: int) -> Optional[str]:
         """Get lesson link for a given course title and lesson number"""
         import json

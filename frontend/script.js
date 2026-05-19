@@ -28,8 +28,10 @@ function setupEventListeners() {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
-    
-    
+
+    // New Chat button
+    document.getElementById('newChatButton').addEventListener('click', createNewSession);
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -122,10 +124,22 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     let html = `<div class="message-content">${displayContent}</div>`;
     
     if (sources && sources.length > 0) {
+        const sourceItems = sources.map((s, i) => {
+            if (s.url) {
+                return `<a class="source-chip" href="${s.url}" target="_blank" rel="noopener noreferrer">
+                    <span class="source-index">${i + 1}</span>
+                    <span class="source-label">${escapeHtml(s.text)}</span>
+                </a>`;
+            }
+            return `<span class="source-chip source-chip--no-link">
+                <span class="source-index">${i + 1}</span>
+                <span class="source-label">${escapeHtml(s.text)}</span>
+            </span>`;
+        });
         html += `
             <details class="sources-collapsible">
-                <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <summary class="sources-header">Sources (${sources.length})</summary>
+                <div class="sources-content">${sourceItems.join('')}</div>
             </details>
         `;
     }
@@ -147,6 +161,11 @@ function escapeHtml(text) {
 // Removed removeMessage function - no longer needed since we handle loading differently
 
 async function createNewSession() {
+    if (currentSessionId) {
+        const sessionToDelete = currentSessionId;
+        fetch(`${API_URL}/session/${sessionToDelete}`, { method: 'DELETE' })
+            .catch(err => console.warn('Could not delete session on server:', err));
+    }
     currentSessionId = null;
     chatMessages.innerHTML = '';
     addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
